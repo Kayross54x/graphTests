@@ -1,105 +1,40 @@
-🗺️ Visualizador CAR - React + Leaflet + TypeScript
-Este projeto é uma aplicação React desenvolvida com Vite e TypeScript, focada em testar e visualizar dados da base do Cadastro Ambiental Rural (CAR) utilizando mapas interativos com Leaflet.
+# 🗺️ Visualizador CAR - React + Leaflet + TypeScript
 
-🚀 Tecnologias Utilizadas
-React + TypeScript
+Este projeto é uma aplicação React desenvolvida com Vite e TypeScript, focada em testar e visualizar dados da base do **Cadastro Ambiental Rural (CAR)** utilizando mapas interativos com **Leaflet**.
 
-Vite — build tool ultrarrápida
+## 🚀 Tecnologias Utilizadas
 
-Leaflet — mapas interativos
+- [React](https://reactjs.org/) + [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/) — build tool ultrarrápida
+- [Leaflet](https://leafletjs.com/) — mapas interativos
+- [React-Leaflet](https://react-leaflet.js.org/) — integração do Leaflet com React
+- [Papaparse](https://www.papaparse.com/) — parser de arquivos CSV
+- [Wellknown](https://github.com/mapbox/wellknown) — parser de geometrias WKT
 
-React-Leaflet — integração do Leaflet com React
+## 📦 Instalação
 
-Papaparse — parser de arquivos CSV
+1. Clone o repositório:
 
-Wellknown — parser de geometrias WKT
-
-📦 Instalação
-Clone o repositório:
-
-bash
-Copiar
-Editar
+```bash
 git clone https://github.com/seu-usuario/seu-repositorio.git
 cd seu-repositorio
-Instale as dependências:
-
-bash
-Copiar
-Editar
 npm install
-Rode o projeto em desenvolvimento:
-
-bash
-Copiar
-Editar
 npm run dev
+
 Acesse no navegador:
-
-arduino
-Copiar
-Editar
 http://localhost:5173
-📄 Funcionalidades
-Upload e parsing de arquivos CSV contendo geometrias no formato WKT.
 
-Visualização dos dados geográficos (polígonos, multipolígonos, linhas) no mapa interativo.
+## 📄 Funcionalidades
 
-Manipulação dinâmica dos dados do CAR para testes e análises visuais.
+- 📤 Upload e parsing de arquivos CSV contendo geometrias no formato **WKT**.
+- 🗺️ Visualização dos dados geográficos (**Polígonos**, **Multipolígonos** e **Linhas**) no mapa interativo.
+- 🔧 Manipulação dinâmica dos dados do **CAR** para testes, análises visuais e validação.
 
-🧠 Sobre o Projeto
-Este projeto tem como objetivo testar e validar diferentes formas de visualização da base de dados do Cadastro Ambiental Rural (CAR) em um ambiente web utilizando mapas interativos. Serve como base para experimentações, análises espaciais e desenvolvimento de funcionalidades futuras.
+## 🧠 Sobre o Projeto
 
-🧹 ESLint + TypeScript
-O projeto já vem configurado com ESLint para garantir boas práticas de desenvolvimento. Caso queira expandir para regras mais robustas com análise de tipos, você pode alterar sua configuração assim:
+Este projeto tem como objetivo **testar e validar diferentes formas de visualização da base de dados do Cadastro Ambiental Rural (CAR)** em um ambiente web utilizando mapas interativos. 
 
-js
-Copiar
-Editar
-export default tseslint.config({
-  extends: [
-    ...tseslint.configs.recommendedTypeChecked,
-    // ou, para regras mais rigorosas:
-    // ...tseslint.configs.strictTypeChecked,
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-Plugins opcionais para React:
-
-bash
-Copiar
-Editar
-npm install eslint-plugin-react-x eslint-plugin-react-dom --save-dev
-Configuração:
-
-js
-Copiar
-Editar
-import reactX from 'eslint-plugin-react-x';
-import reactDom from 'eslint-plugin-react-dom';
-
-export default tseslint.config({
-  plugins: {
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-});
-🗺️ Exemplo de Dados CSV
-c
-Copiar
-Editar
-cd_imovel;ds_municipio;geometry;vlr_area_calculada
-1;Cidade A;"POLYGON ((-50 -20, -50 -21, -51 -21, -51 -20, -50 -20))";100
-2;Cidade B;"MULTIPOLYGON (((-52 -20, -52 -21, -53 -21, -53 -20, -52 -20)))";200
-📚 Licença
-Este projeto está licenciado sob a MIT License.
+Ele serve como base para:
+- 🧪 Experimentações
+- 🔍 Análises espaciais
+- 🚀 Desenvolvimento de funcionalidades futuras
