@@ -1,162 +1,42 @@
-import { MapContainer, TileLayer, Polygon, Tooltip, GeoJSON } from "react-leaflet";
+import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import Papa from "papaparse";
-import wellknown from "wellknown";
+
 import acrelandia from "./mocks/acrelandia.json";
 import { useEffect, useState } from "react";
 import { imoveisAcrelandia } from "./mocks/imoveis_acrelandia";
 import { reservaLegalAcrelandia } from "./mocks/reserva_legal_acrelandia";
+import { reservaPermanenteAcrelandia } from "./mocks/reserva_permanente_acrelandia";
+import { hidrografiaAcrelandia } from "./mocks/hidrografia_acrelandia";
+import CSVParser from "./modules/CSVParser";
+import type { GeoJsonInterface, PolygonToPlot } from "./interfaces/PolygonToPlot";
+import LeafletPolygonLayer from "./components/LeafletPolygonLayer";
 
 export default function App() {
-    const [imoveis, setImoveis] = useState<any[]>([]);
-    const [reserva, setReserva] = useState<any[]>([]);
-    const [municipio, setMunicipio] = useState<any>(null);
-
+    const [imoveis, setImoveis] = useState<PolygonToPlot[]>([]);
+    const [reserva, setReserva] = useState<PolygonToPlot[]>([]);
+    const [municipio, setMunicipio] = useState<GeoJsonInterface | null>(null);
+    const [preservacaoPermanente, setPreservacaoPermanente] = useState<PolygonToPlot[]>([]);
+    const [hidrografia, setHidrografia] = useState<PolygonToPlot[]>([]);
 
     const [showMunicipio, setShowMunicipio] = useState(true);
     const [showImoveis, setShowImoveis] = useState(true);
     const [showReserva, setShowReserva] = useState(false);
+    const [showPreservacaoPermanente, setShowPreservacaoPermanente] = useState(false);
+    const [showHidrografia, setShowHidrografia] = useState(false);
     // const [showPoligonoAvulso, setShowPoligonoAvulso] = useState(true);
 
     useEffect(() => {
+        //@ts-ignore
         setMunicipio(acrelandia);
-
-        Papa.parse(imoveisAcrelandia.trim(), {
-            header: true,
-            delimiter: ";",
-            skipEmptyLines: true,
-            complete: (result) => {
-                const parsed = result.data as any[];
-                const polys = parsed.flatMap((item, index) => { // Adicione 'index' para identificar
-                    try {
-                        const geo = wellknown(item.geometria);
-
-                        let coordinates;
-                        // Lidar com diferentes tipos de geometria
-                        if (geo.type === 'Polygon') {
-                            // Para Polygon simples
-                            const coordinates = geo.coordinates[0].map(([lng, lat]) => [lat, lng]);
-                            return [{
-                                id: item.cd_imovel,
-                                municipio: item.ds_municipio,
-                                cd_imovel: item.cd_imovel,
-                                area: item.vlr_area_calculada,
-                                coordinates: coordinates,
-                            }];
-                        } else if (geo.type === 'MultiPolygon') {
-                            // Para MultiPolygon, processamos cada polígono individualmente
-                            return geo.coordinates.map((polygonCoords, polyIndex) => {
-                                const coordinates = polygonCoords[0].map(([lng, lat]) => [lat, lng]);
-                                return {
-                                    id: `${item.cd_imovel} - imovel ${polyIndex}`,
-                                    municipio: `${item.ds_municipio} - imovel ${polyIndex}`,
-                                    cd_imovel: `${item.cd_imovel} - imovel ${polyIndex}`,
-                                    area: item.vlr_area_calculada,
-                                    coordinates: coordinates,
-                                };
-                            });
-                        } else if (geo.type === 'LineString') {
-                            // Se for LineString, as coordenadas são diretas
-                            coordinates = geo.coordinates.map(([lng, lat]: [number, number]) => [lat, lng]);
-                        } else if (geo.type === 'Point') {
-                            // Ponto não tem múltiplos anéis, não é um polígono para Polygon
-                            console.warn(`Item ${index}: Found Point geometry, skipping for Polygon rendering.`);
-                            return null; // Retorna null para este item, será filtrado depois
-                        } else {
-                            console.warn(`Item ${index}: Unknown or unsupported geometry type: ${geo.type}`);
-                            return null; // Retorna null para este item
-                        }
-
-                        if (!coordinates) {
-                            console.error(`Item ${index}: Coordinates are null or undefined after processing geometry.`);
-                            return null; // Garante que itens sem coordenadas válidas sejam pulados
-                        }
-
-                        return {
-                            id: item.cd_imovel + " - imóvel",
-                            municipio: item.ds_municipio + " - imóvel",
-                            cd_imovel: item.cd_imovel + " - imóvel",
-                            area: item.vlr_area_calculada,
-                            coordinates: coordinates,
-                        };
-                    } catch (parseError) {
-                        console.error(`Error parsing WKT for item ${index}:`, item.geometria_nova, parseError);
-                        return null; // Retorna null para itens com erro de parsing
-                    }
-                }).filter(item => item !== null); // Filtra quaisquer itens que retornaram null
-
-                setImoveis(polys);
-            },
-        });
-
-        Papa.parse(reservaLegalAcrelandia.trim(), {
-            header: true,
-            delimiter: ";",
-            skipEmptyLines: true,
-            complete: (result) => {
-                const parsed = result.data as any[];
-                const polys = parsed.flatMap((item, index) => { // Adicione 'index' para identificar
-                    try {
-                        const geo = wellknown(item.geometria_nova);
-
-                        let coordinates;
-                        // Lidar com diferentes tipos de geometria
-                        if (geo.type === 'Polygon') {
-                            // Para Polygon, coordinates[0] é o anel exterior
-                            const coordinates = geo.coordinates[0].map(([lng, lat]) => [lat, lng]);
-                            return [{
-                                id: item.cd_imovel,
-                                municipio: item.ds_municipio,
-                                cd_imovel: item.cd_imovel,
-                                area: item.vlr_area_calculada,
-                                coordinates: coordinates,
-                            }];
-                        } else if (geo.type === 'MultiPolygon') {
-                            // Para MultiPolygon, processamos cada polígono individualmente
-                            return geo.coordinates.map((polygonCoords, polyIndex) => {
-                                const coordinates = polygonCoords[0].map(([lng, lat]) => [lat, lng]);
-                                return {
-                                    id: `${item.cd_imovel} - reserva ${polyIndex}`,
-                                    municipio: `${item.ds_municipio} - reserva ${polyIndex}`,
-                                    cd_imovel: `${item.cd_imovel} - reserva ${polyIndex}`,
-                                    area: item.vlr_area_calculada,
-                                    coordinates: coordinates,
-                                };
-                            });
-                        } else if (geo.type === 'LineString') {
-                            // Se for LineString, as coordenadas são diretas
-                            coordinates = geo.coordinates.map(([lng, lat]: [number, number]) => [lat, lng]);
-                        } else if (geo.type === 'Point') {
-                            // Ponto não tem múltiplos anéis, não é um polígono para Polygon
-                            console.warn(`Item ${index}: Found Point geometry, skipping for Polygon rendering.`);
-                            return null; // Retorna null para este item, será filtrado depois
-                        } else {
-                            console.warn(`Item ${index}: Unknown or unsupported geometry type: ${geo.type}`);
-                            return null; // Retorna null para este item
-                        }
-
-                        if (!coordinates) {
-                            console.error(`Item ${index}: Coordinates are null or undefined after processing geometry.`);
-                            return null; // Garante que itens sem coordenadas válidas sejam pulados
-                        }
-
-                        return {
-                            id: item.cd_imovel + " - reserva",
-                            municipio: item.ds_municipio + " - reserva",
-                            cd_imovel: item.cd_imovel + " - reserva",
-                            area: item.vlr_area_calculada,
-                            coordinates: coordinates,
-                        };
-                    } catch (parseError) {
-                        console.error(`Error parsing WKT for item ${index}:`, item.geometria_nova, parseError);
-                        return null; // Retorna null para itens com erro de parsing
-                    }
-                }).filter(item => item !== null); // Filtra quaisquer itens que retornaram null
-
-                setReserva(polys); // Setar todos os polígonos válidos
-            },
-        })
+        getCSVData();
     }, []);
+
+    async function getCSVData() {
+        setImoveis(await CSVParser.CsvToLeafletFormat(imoveisAcrelandia, "geometria", "imoveis"));
+        setReserva(await CSVParser.CsvToLeafletFormat(reservaLegalAcrelandia, "geometria_nova", "reserva"));
+        setPreservacaoPermanente(await CSVParser.CsvToLeafletFormat(reservaPermanenteAcrelandia, "geometria_nova", "preservacaoPermanente"));
+        setHidrografia(await CSVParser.CsvToLeafletFormat(hidrografiaAcrelandia, "geometria", "hidrografia"));
+    }
 
     return (
         <div className="min-h-screen bg-gray-100 p-6">
@@ -208,6 +88,32 @@ export default function App() {
                                         Mostrar Áreas de reserva
                                     </label>
                                 </div>
+
+                                <div className="flex ">
+                                    <input
+                                        type="checkbox"
+                                        id="showPreservacaoPermanente"
+                                        checked={showPreservacaoPermanente}
+                                        onChange={() => setShowPreservacaoPermanente(!showPreservacaoPermanente)}
+                                        className="h-5 w-5 text-orange-400 focus:ring-orange-300 border-gray-300 rounded"
+                                    />
+                                    <label htmlFor="showReserva" className="ml-2 block text-sm text-gray-700">
+                                        Mostrar Áreas de Preservacao Permanente
+                                    </label>
+                                </div>
+
+                                <div className="flex ">
+                                    <input
+                                        type="checkbox"
+                                        id="showHidrografia"
+                                        checked={showHidrografia}
+                                        onChange={() => setShowHidrografia(!showHidrografia)}
+                                        className="h-4 w-4 text-cyan-400 focus:ring-cyan-300 border-gray-300 rounded"
+                                    />
+                                    <label htmlFor="showHidrografia" className="ml-2 block text-sm text-gray-700">
+                                        Mostrar Hidrografia
+                                    </label>
+                                </div>
                             </div>
 
                             <div className="mt-6">
@@ -225,17 +131,29 @@ export default function App() {
                                     <div className="w-4 h-4 bg-green-500 opacity-30 mr-2"></div>
                                     <span className="text-xs text-gray-600">Áreas de Reserva</span>
                                 </div>
+
+                                <div className="flex items-center mb-2">
+                                    <div className="w-4 h-4 bg-orange-500 opacity-30 mr-2"></div>
+                                    <span className="text-xs text-gray-600">Áreas de Reserva Permanente</span>
+                                </div>
+
+                                <div className="flex items-center mb-2">
+                                    <div className="w-4 h-4 bg-cyan-500 opacity-30 mr-2"></div>
+                                    <span className="text-xs text-gray-600">Hidrografia</span>
+                                </div>
                             </div>
                         </div>
 
                         {/* Mapa */}
                         <div className="flex-1 h-[600px]">
                             <MapContainer
+                                //@ts-ignore
                                 center={[-9.96783, -66.67577]}
                                 zoom={9}
                                 className="w-full h-full"
                             >
                                 <TileLayer
+                                    //@ts-ignore
                                     attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
                                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                                 />
@@ -245,6 +163,7 @@ export default function App() {
                                     <GeoJSON
                                         key={`municipio-${showMunicipio}`}
                                         data={municipio}
+                                        //@ts-ignore
                                         style={{
                                             fillColor: 'red',
                                             weight: 1,
@@ -275,81 +194,38 @@ export default function App() {
                                 )} */}
 
                                 {/* imoveis - Camada superior */}
-                                {showImoveis && imoveis.map((poly) => (
-                                    <Polygon
-                                        key={poly.id}
-                                        positions={poly.coordinates}
-                                        eventHandlers={{
-                                            mouseover: (e) => {
-                                                e.target.setStyle({
-                                                    fillOpacity: 0.6,
-                                                    weight: 2
-                                                });
-                                            },
-                                            mouseout: (e) => {
-                                                e.target.setStyle({
-                                                    fillOpacity: 0.3,
-                                                    weight: 0.5
-                                                });
-                                            }
-                                        }}
-                                        pathOptions={{
-                                            color: "blue",
-                                            fillOpacity: 0.3,
-                                            weight: 0.2,
-                                            zIndex: 1000
-                                        }}
-                                    >
-                                        <Tooltip
-                                            sticky
-                                            className="!text-xs !bg-white !text-gray-800 !border !border-gray-200 !shadow-lg"
-                                        >
-                                            <div className="space-y-1">
-                                                <p><span className="font-semibold">Código:</span> {poly.cd_imovel}</p>
-                                                <p><span className="font-semibold">Área:</span> {Number(poly.area).toFixed(2)} ha</p>
-                                                <p><span className="font-semibold">Município:</span> {poly.municipio}</p>
-                                            </div>
-                                        </Tooltip>
-                                    </Polygon>
+                                {showImoveis && imoveis.map((poly, idx) => (
+                                    <LeafletPolygonLayer 
+                                        polygon={poly}
+                                        type={"imoveis " + idx}
+                                        color="blue"
+                                    />
                                 ))}
 
                                 {/*reserva*/}
-                                {showReserva && reserva.map((poly, i) => (
-                                    <Polygon
-                                        key={i}
-                                        positions={poly.coordinates}
-                                        eventHandlers={{
-                                            mouseover: (e) => {
-                                                e.target.setStyle({
-                                                    fillOpacity: 0.6,
-                                                    weight: 2
-                                                });
-                                            },
-                                            mouseout: (e) => {
-                                                e.target.setStyle({
-                                                    fillOpacity: 0.3,
-                                                    weight: 0.5
-                                                });
-                                            }
-                                        }}
-                                        pathOptions={{
-                                            color: "green",
-                                            fillOpacity: 0.3,
-                                            weight: 0.5,
-                                            zIndex: 1000
-                                        }}
-                                    >
-                                        <Tooltip
-                                            sticky
-                                            className="!text-xs !bg-white !text-gray-800 !border !border-gray-200 !shadow-lg"
-                                        >
-                                            <div className="space-y-1">
-                                                <p><span className="font-semibold">Código:</span> {poly.cd_imovel}</p>
-                                                <p><span className="font-semibold">Área:</span> {Number(poly.area).toFixed(2)} ha</p>
-                                                <p><span className="font-semibold">Município:</span> {poly.municipio}</p>
-                                            </div>
-                                        </Tooltip>
-                                    </Polygon>
+                                {showReserva && reserva.map((poly, idx) => (
+                                    <LeafletPolygonLayer 
+                                        polygon={poly}
+                                        type={"reserva " + idx}
+                                        color="green"
+                                    />
+                                ))}
+
+                                {/* preservacao - Camada superior */}
+                                {showPreservacaoPermanente && preservacaoPermanente.map((poly, idx) => (
+                                    <LeafletPolygonLayer 
+                                        polygon={poly}
+                                        type={"preservacao " + idx}
+                                        color="olive"
+                                    />
+                                ))}
+
+                                {showHidrografia && hidrografia.map((poly, idx) => (
+                                    <LeafletPolygonLayer 
+                                        polygon={poly}
+                                        type={"hidro " + idx}
+                                        color="turquoise"
+                                    />
                                 ))}
                             </MapContainer>
                         </div>
