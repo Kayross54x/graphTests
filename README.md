@@ -13,13 +13,14 @@ Este projeto é uma aplicação React desenvolvida com Vite e TypeScript, focada
 
 ## 📦 Instalação
 
-1. Clone o repositório:
+Clone o repositório:
 
 ```bash
 git clone https://github.com/seu-usuario/seu-repositorio.git
 cd seu-repositorio
 npm install
 npm run dev
+```
 
 Acesse no navegador:
 http://localhost:5173
